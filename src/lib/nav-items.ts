@@ -12,7 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Storyboard", href: "/dashboard/storyboard", sprint: 3 },
   { label: "Characters", href: "/dashboard/characters" },
   { label: "Environments", href: "/dashboard/environments" },
-  { label: "Scenes", href: "/dashboard/scenes", sprint: 3 },
+  { label: "Scenes", href: "/dashboard/scenes" },
   { label: "Timeline", href: "/dashboard/timeline", sprint: 4 },
   { label: "AI Director", href: "/dashboard/ai-director", sprint: 4 },
   { label: "AI Cinematographer", href: "/dashboard/ai-cinematographer", sprint: 4 },
