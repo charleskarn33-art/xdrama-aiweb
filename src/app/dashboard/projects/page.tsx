@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createProject } from "./actions";
 
@@ -77,13 +78,18 @@ export default async function ProjectsPage() {
         {projects && projects.length > 0 ? (
           <ul className="divide-y divide-border">
             {projects.map((project) => (
-              <li key={project.id} className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="font-medium">{project.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {project.type.replace("_", " ")} · {project.status}
-                  </p>
-                </div>
+              <li key={project.id}>
+                <Link
+                  href={`/dashboard/projects/${project.id}`}
+                  className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-muted"
+                >
+                  <div>
+                    <p className="font-medium">{project.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {project.type.replace("_", " ")} · {project.status}
+                    </p>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

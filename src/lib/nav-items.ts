@@ -8,7 +8,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Projects", href: "/dashboard/projects" },
-  { label: "Script Studio", href: "/dashboard/script-studio", sprint: 2 },
+  { label: "Script Studio", href: "/dashboard/script-studio" },
   { label: "Storyboard", href: "/dashboard/storyboard", sprint: 3 },
   { label: "Characters", href: "/dashboard/characters", sprint: 3 },
   { label: "Environments", href: "/dashboard/environments", sprint: 3 },
@@ -18,7 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "AI Cinematographer", href: "/dashboard/ai-cinematographer", sprint: 4 },
   { label: "Voice", href: "/dashboard/voice", sprint: 4 },
   { label: "Music", href: "/dashboard/music", sprint: 4 },
-  { label: "Assets", href: "/dashboard/assets", sprint: 2 },
+  { label: "Assets", href: "/dashboard/assets" },
   { label: "Render Queue", href: "/dashboard/render-queue", sprint: 3 },
   { label: "Exports", href: "/dashboard/exports", sprint: 4 },
   { label: "Templates", href: "/dashboard/templates", sprint: 4 },

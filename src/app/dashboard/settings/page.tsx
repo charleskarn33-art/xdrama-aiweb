@@ -13,6 +13,17 @@ export default async function SettingsPage() {
     .eq("id", user!.id)
     .maybeSingle();
 
+  const [{ data: wallet }, { data: packages }, { data: transactions }] = await Promise.all([
+    supabase.from("credit_wallets").select("*").eq("user_id", user!.id).maybeSingle(),
+    supabase.from("credit_packages").select("*").order("credits", { ascending: true }),
+    supabase
+      .from("credit_transactions")
+      .select("id, type, amount, balance_after, description, created_at")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -50,6 +61,64 @@ export default async function SettingsPage() {
           Save
         </button>
       </form>
+
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-medium text-muted-foreground">Billing — XCredits</h2>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <BalanceCard label="Available" value={wallet?.available_credits ?? 0} />
+          <BalanceCard label="Reserved" value={wallet?.reserved_credits ?? 0} />
+          <BalanceCard label="Used" value={wallet?.used_credits ?? 0} />
+        </div>
+
+        {packages && packages.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Credit packages</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {packages.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
+                >
+                  <span>{pkg.name}</span>
+                  <span className="text-muted-foreground">
+                    {Number(pkg.credits).toLocaleString()} cr · $
+                    {(pkg.price_cents / 100).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Checkout isn&apos;t wired up yet — billing integration ships in Sprint 5.
+            </p>
+          </div>
+        )}
+
+        {transactions && transactions.length > 0 && (
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Recent transactions</p>
+            <ul className="divide-y divide-border text-sm">
+              {transactions.map((tx) => (
+                <li key={tx.id} className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground">
+                    {tx.type} {tx.description ? `— ${tx.description}` : ""}
+                  </span>
+                  <span>{Number(tx.amount) > 0 ? "+" : ""}{Number(tx.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BalanceCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{Number(value).toLocaleString()}</p>
     </div>
   );
 }
