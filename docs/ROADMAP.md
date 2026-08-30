@@ -67,11 +67,19 @@ Shipped:
   Timeline" on a shot pushes it onto the video track. Drag-to-reposition,
   trim, and split are not built yet — reordering is arrow-button based for
   now; the data model doesn't need to change when that lands.
+- Script Analyzer (`src/lib/script/analyze.ts`): deterministic screenplay
+  parsing — no LLM call — that reads scene headings into Scenes+Locations
+  and ALL-CAPS dialogue cues into Characters. "Analyze Script" in Script
+  Studio seeds the Story Bible from a script and is safe to re-run (skips
+  anything already imported by heading/name). The Story Bible itself is
+  just the Characters/Locations/Scenes tables already built — no separate
+  aggregation view yet. Mood, camera, and lighting suggestions need a real
+  LLM call and are deferred with the rest of the AI Director work below.
 
 Still open:
 
-- AI Script Analyzer → Story Bible
-- AI Director + AI Cinematographer recommendations
+- AI Director + AI Cinematographer recommendations (needs a live LLM —
+  same "no fake AI results" constraint as Sprint 3's Generate panel)
 - Prompt Engine (model-specific prompt/negative-prompt/parameter generation)
 - Movie Composer + final render pipeline (reads `timelines.tracks` into
   `render_jobs.timeline_snapshot` — same shape, so no translation needed)

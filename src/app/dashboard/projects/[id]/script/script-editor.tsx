@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { countWords, detectSceneHeadings } from "@/lib/script/parse";
 import { restoreVersion, saveScript } from "./actions";
+import { analyzeScript, type AnalyzeScriptResult } from "./analyze-actions";
 
 const AUTOSAVE_DELAY_MS = 2000;
 
@@ -27,6 +28,9 @@ export function ScriptEditor({
   const [text, setText] = useState(initialText);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [isRestoring, startRestoring] = useTransition();
+  const [isAnalyzing, startAnalyzing] = useTransition();
+  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeScriptResult | null>(null);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const router = useRouter();
   const savedTextRef = useRef(initialText);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +77,21 @@ export function ScriptEditor({
     });
   }
 
+  function handleAnalyze() {
+    setAnalyzeError(null);
+    startAnalyzing(async () => {
+      try {
+        await saveScript(scriptId, projectId, text);
+        savedTextRef.current = text;
+        const result = await analyzeScript(projectId, scriptId);
+        setAnalyzeResult(result);
+        router.refresh();
+      } catch (err) {
+        setAnalyzeError(err instanceof Error ? err.message : "Analysis failed.");
+      }
+    });
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
       <div className="flex flex-col gap-2">
@@ -113,7 +132,30 @@ export function ScriptEditor({
           >
             Export .txt
           </button>
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="rounded-md border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+          >
+            {isAnalyzing ? "Analyzing…" : "Analyze Script"}
+          </button>
         </div>
+
+        {analyzeError && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {analyzeError}
+          </p>
+        )}
+        {analyzeResult && (
+          <p className="rounded-md border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
+            Found {analyzeResult.scenesCreated} new scene
+            {analyzeResult.scenesCreated === 1 ? "" : "s"}, {analyzeResult.locationsCreated} new
+            location{analyzeResult.locationsCreated === 1 ? "" : "s"}, and{" "}
+            {analyzeResult.charactersCreated} new character
+            {analyzeResult.charactersCreated === 1 ? "" : "s"}. Already-imported scenes and
+            characters were skipped.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
