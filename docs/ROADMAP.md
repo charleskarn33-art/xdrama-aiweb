@@ -80,6 +80,11 @@ Shipped:
   default negative prompt, model-type aware (camera movement only applies
   to video). Deterministic string composition, no model call. Wired into
   the shot creation form's "Suggest" button.
+- Subtitle Studio (`src/lib/subtitles/generate.ts`): extracts dialogue
+  from character cue lines in the script, estimates timing from a
+  words-per-second reading pace (there's no audio yet to time against —
+  labeled as an estimate, not measured timing), and formats SRT/VTT.
+  Exposed as Export .srt/.vtt buttons in Script Studio.
 
 Still open:
 

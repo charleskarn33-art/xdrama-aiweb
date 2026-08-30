@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { countWords, detectSceneHeadings } from "@/lib/script/parse";
 import { restoreVersion, saveScript } from "./actions";
 import { analyzeScript, type AnalyzeScriptResult } from "./analyze-actions";
+import { estimateSubtitleTiming, extractDialogueLines, formatSRT, formatVTT } from "@/lib/subtitles/generate";
 
 const AUTOSAVE_DELAY_MS = 2000;
 
@@ -60,14 +61,24 @@ export function ScriptEditor({
     event.target.value = "";
   }
 
-  function handleExport() {
-    const blob = new Blob([text], { type: "text/plain" });
+  function downloadFile(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "script.txt";
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function handleExport() {
+    downloadFile(text, "script.txt", "text/plain");
+  }
+
+  function handleExportSubtitles(format: "srt" | "vtt") {
+    const cues = estimateSubtitleTiming(extractDialogueLines(text));
+    const content = format === "srt" ? formatSRT(cues) : formatVTT(cues);
+    downloadFile(content, `subtitles.${format}`, "text/plain");
   }
 
   function handleRestore(versionId: string) {
@@ -112,7 +123,7 @@ export function ScriptEditor({
           placeholder={"INT. VILLAGE SQUARE - DAY\n\nA quiet morning..."}
           className="scrollbar-thin h-[65vh] w-full resize-none rounded-xl border border-border bg-card p-4 font-mono text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
         />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => fileInputRef.current?.click()}
             className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -131,6 +142,20 @@ export function ScriptEditor({
             className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             Export .txt
+          </button>
+          <button
+            onClick={() => handleExportSubtitles("srt")}
+            title="Timing is a words-per-second estimate, not measured from real audio — adjust after Voice Studio generates dialogue."
+            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Export .srt
+          </button>
+          <button
+            onClick={() => handleExportSubtitles("vtt")}
+            title="Timing is a words-per-second estimate, not measured from real audio — adjust after Voice Studio generates dialogue."
+            className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Export .vtt
           </button>
           <button
             onClick={handleAnalyze}
