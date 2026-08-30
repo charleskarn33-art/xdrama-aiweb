@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createShot, deleteScene, deleteShot, updateScene } from "../actions";
+import { deleteScene, deleteShot, updateScene } from "../actions";
 import { addShotToTimeline } from "../../timeline/actions";
+import { ShotForm } from "./shot-form";
 
 const INT_EXT_OPTIONS = ["", "INT", "EXT", "INT/EXT"] as const;
 
@@ -27,7 +28,7 @@ export default async function SceneDetailPage({
 
   const updateSceneWithIds = updateScene.bind(null, sceneId, projectId);
   const deleteSceneWithIds = deleteScene.bind(null, sceneId, projectId);
-  const createShotWithIds = createShot.bind(null, sceneId, projectId);
+  const sceneLocation = locations?.find((loc) => loc.id === scene.location_id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -183,35 +184,17 @@ export default async function SceneDetailPage({
           </ul>
         )}
 
-        <form action={createShotWithIds} className="flex flex-wrap items-end gap-2">
-          <input
-            name="cameraAngle"
-            placeholder="Camera angle"
-            className="w-36 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-          <input
-            name="cameraMovement"
-            placeholder="Camera movement"
-            className="w-36 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-          <input
-            name="prompt"
-            placeholder="Shot prompt"
-            className="w-64 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-          <input
-            name="durationSeconds"
-            type="number"
-            placeholder="Sec"
-            className="w-16 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
-          <button
-            type="submit"
-            className="rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted"
-          >
-            Add shot
-          </button>
-        </form>
+        <ShotForm
+          sceneId={sceneId}
+          projectId={projectId}
+          sceneContext={{
+            intExt: scene.int_ext,
+            locationName: sceneLocation?.name,
+            timeOfDay: scene.time_of_day,
+            mood: scene.mood,
+            sceneDescription: scene.description,
+          }}
+        />
       </div>
     </div>
   );

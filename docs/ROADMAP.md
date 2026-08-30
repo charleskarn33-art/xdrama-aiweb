@@ -75,12 +75,16 @@ Shipped:
   just the Characters/Locations/Scenes tables already built — no separate
   aggregation view yet. Mood, camera, and lighting suggestions need a real
   LLM call and are deferred with the rest of the AI Director work below.
+- Prompt Engine (`src/lib/ai/prompt-engine.ts`): composes scene/location/
+  mood/camera/character context into a model-ready prompt + a sensible
+  default negative prompt, model-type aware (camera movement only applies
+  to video). Deterministic string composition, no model call. Wired into
+  the shot creation form's "Suggest" button.
 
 Still open:
 
 - AI Director + AI Cinematographer recommendations (needs a live LLM —
   same "no fake AI results" constraint as Sprint 3's Generate panel)
-- Prompt Engine (model-specific prompt/negative-prompt/parameter generation)
 - Movie Composer + final render pipeline (reads `timelines.tracks` into
   `render_jobs.timeline_snapshot` — same shape, so no translation needed)
 - Voice Studio, Music Studio, Lip Sync, Subtitle Studio
