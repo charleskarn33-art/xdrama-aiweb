@@ -1,0 +1,19 @@
+{
+  "id": "drama.drama-scene-v1",
+  "name": "Drama Scene",
+  "category": "drama",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["human_performance", "character_consistency"]
+  },
+  "inputs": {
+    "sceneId": { "type": "string", "required": true },
+    "shotIds": { "type": "string[]", "required": true },
+    "dialogueAudioUrl": { "type": "audio", "required": false }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "trailer.trailer-cut-v1",
+  "name": "Trailer Cut",
+  "category": "trailer",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["cinematic_video", "fast_preview"]
+  },
+  "inputs": {
+    "projectId": { "type": "string", "required": true },
+    "sourceShotIds": { "type": "string[]", "required": true },
+    "musicTrackId": { "type": "string", "required": false },
+    "durationSeconds": { "type": "number", "minimum": 15, "maximum": 120, "default": 60 }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "music-video.beat-sync-v1",
+  "name": "Beat-Synced Music Video",
+  "category": "music-video",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["cinematic_video"]
+  },
+  "inputs": {
+    "musicTrackUrl": { "type": "audio", "required": true },
+    "sourceShotIds": { "type": "string[]", "required": true }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}
