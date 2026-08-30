@@ -26,12 +26,33 @@
 
 ## Sprint 3 — AI Filmmaking Engine
 
-- Modal GPU functions implemented for at least one model per type (video/image/audio/tts/lip_sync)
-- Real ComfyUI graphs wired into `ai/workflows/`
-- AI Job system: QUEUED → ... → COMPLETED/FAILED lifecycle, Supabase Realtime progress updates
-- Credit reservation/settlement around job execution
-- Character Studio, Environment Studio, Storyboard Studio
-- Model compatibility layer + fallback routing in production
+Shipped:
+
+- AI Job pipeline (`src/lib/ai/jobs.ts`): routes a model, checks
+  compatibility (`src/lib/ai/compatibility.ts`), reserves XCredits via
+  atomic Postgres RPCs (`reserve_credits`/`settle_job_credits`/
+  `refund_reserved_credits`), creates the `ai_jobs` row, and submits to the
+  `AIComputeProvider` — failing honestly (and refunding the reservation) if
+  the provider is unreachable, never a fake success
+- Supabase Realtime wired for `ai_jobs`/`ai_job_events`; `JobStatus` shows
+  live stage/progress/error without a page refresh
+- A project-scoped **Generate** panel exercises the full pipeline end to
+  end — it fails with "AI provider unavailable" today because nothing
+  downstream is deployed yet, which is the correct, honest behavior
+- Character Studio and Environment Studio: full CRUD + reference image
+  galleries (direct-to-storage upload, same pattern as the Asset Library)
+- `ai-server/modal_app/`: a real, deployable Modal app with one function
+  per generation type (video/image/audio/voice/lip_sync/movie render), GPU
+  class pulled from the model registry — each currently raises
+  `NotImplementedError` rather than fabricating a result
+
+Deferred (needs real GPU infra, not just more app code):
+
+- Wiring the orchestrator's `/jobs/submit` to actually call the Modal
+  functions above (currently still `501` — nothing to call yet)
+- Real ComfyUI graphs in `ai/workflows/` and at least one working model
+  end to end (needs downloaded checkpoints + a ComfyUI image on a Modal volume)
+- Storyboard Studio, Scenes/Shots UI, Render Queue
 
 ## Sprint 4 — One-Click Movie Generation
 

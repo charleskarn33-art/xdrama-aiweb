@@ -561,10 +561,32 @@ type Tables = {
   [K in keyof TableDefs]: TableDefs[K] & { Relationships: [] };
 };
 
+interface FunctionDefs {
+  reserve_credits: {
+    Args: { p_user_id: string; p_amount: number; p_job_id: string };
+    Returns: undefined;
+  };
+  settle_job_credits: {
+    Args: { p_job_id: string; p_actual_cost: number };
+    Returns: undefined;
+  };
+  refund_reserved_credits: {
+    Args: { p_job_id: string };
+    Returns: undefined;
+  };
+}
+
+// Plain interfaces with fixed keys don't get an implicit index signature,
+// so they fail supabase-js's `Schema extends GenericSchema` check (which
+// needs Functions assignable to Record<string, GenericFunction>) — silently
+// collapsing every table's type to `never`. Mapping over the keys (as with
+// `Tables` above) gives TS that implicit index signature.
+type Functions = { [K in keyof FunctionDefs]: FunctionDefs[K] };
+
 export interface Database {
   public: {
     Tables: Tables;
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: Functions;
   };
 }

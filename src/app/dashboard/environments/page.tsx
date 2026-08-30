@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { SelectProjectPrompt } from "@/components/ui/select-project-prompt";
 
 export default function Page() {
-  return <ComingSoon title="Environments" sprint={3} />;
+  return <SelectProjectPrompt feature="Environments" />;
 }

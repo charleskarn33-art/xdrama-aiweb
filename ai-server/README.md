@@ -7,9 +7,11 @@ configured with `AI_ORCHESTRATOR_URL`.
 
 ```
 ai-server/
-  modal/        Modal app + GPU function definitions (video_generation,
-                image_generation, audio_generation, tts_generation,
-                lip_sync, video_processing, movie_rendering)
+  modal_app/    Modal app + GPU function definitions (generate_video,
+                generate_image, generate_audio, generate_voice, lip_sync,
+                render_movie). Named modal_app/, not modal/ — a directory
+                literally named modal/ shadows the `modal` pip package for
+                every `import modal` inside this tree.
   models/       Model loading/caching logic per registered model
   workflows/    ComfyUI workflow execution helpers (reads ai/workflows/)
   services/     FastAPI orchestrator — the HTTP surface this app calls
@@ -22,10 +24,18 @@ ai-server/
 
 ## Status
 
-Sprint 1 ships the service skeleton and the HTTP contract only — the GPU
-functions are not implemented yet (Sprint 3: AI Filmmaking Engine). Every
-endpoint below responds honestly with `501 Not Implemented` rather than a
-fake success, per the "no fake AI results" rule in the architecture spec.
+The service skeleton and the HTTP contract are wired up, and `modal_app/`
+has a real, deployable Modal app — one function per generation type
+(`generate_video`, `generate_image`, `generate_audio`, `generate_voice`,
+`lip_sync`, `render_movie`), each with a GPU class pulled from the model
+registry. None of them run real inference yet: every function raises
+`NotImplementedError` rather than a fake success, per the "no fake AI
+results" rule in the architecture spec. Wiring one up for real means
+downloading that model's checkpoint onto a Modal volume and building a
+ComfyUI image for it — real infrastructure this scaffold doesn't have
+provisioned. The orchestrator endpoints below still respond `501` because
+they don't call these functions yet (that dispatch wiring is the next
+slice once at least one model is really running).
 
 ## Endpoints (`services/orchestrator.py`)
 

@@ -7,7 +7,10 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Overview", segment: "" },
   { label: "Script", segment: "script" },
+  { label: "Characters", segment: "characters" },
+  { label: "Environments", segment: "environments" },
   { label: "Assets", segment: "assets" },
+  { label: "Generate", segment: "generate" },
 ];
 
 export function ProjectTabs({ projectId }: { projectId: string }) {
