@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createShot, deleteScene, deleteShot, updateScene } from "../actions";
+import { addShotToTimeline } from "../../timeline/actions";
 
 const INT_EXT_OPTIONS = ["", "INT", "EXT", "INT/EXT"] as const;
 
@@ -151,6 +152,7 @@ export default async function SceneDetailPage({
           <ul className="mb-4 flex flex-col gap-2">
             {shots.map((shot) => {
               const deleteShotWithIds = deleteShot.bind(null, shot.id, sceneId, projectId);
+              const addShotWithIds = addShotToTimeline.bind(null, projectId, shot.id);
               return (
                 <li
                   key={shot.id}
@@ -165,9 +167,16 @@ export default async function SceneDetailPage({
                       {shot.prompt || "No prompt yet"}
                     </p>
                   </div>
-                  <form action={deleteShotWithIds}>
-                    <button className="text-xs text-destructive hover:underline">Delete</button>
-                  </form>
+                  <div className="flex gap-3">
+                    <form action={addShotWithIds}>
+                      <button className="text-xs text-accent hover:underline">
+                        Add to Timeline
+                      </button>
+                    </form>
+                    <form action={deleteShotWithIds}>
+                      <button className="text-xs text-destructive hover:underline">Delete</button>
+                    </form>
+                  </div>
                 </li>
               );
             })}

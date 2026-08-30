@@ -442,6 +442,17 @@ interface TableDefs {
         };
         Update: Partial<TableDefs["render_jobs"]["Row"]>;
       };
+      timelines: {
+        Row: {
+          project_id: string;
+          tracks: Json;
+          updated_at: string;
+        };
+        Insert: Partial<TableDefs["timelines"]["Row"]> & {
+          project_id: string;
+        };
+        Update: Partial<TableDefs["timelines"]["Row"]>;
+      };
       exports: {
         Row: {
           id: string;

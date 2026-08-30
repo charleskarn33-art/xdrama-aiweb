@@ -52,16 +52,33 @@ Deferred (needs real GPU infra, not just more app code):
   functions above (currently still `501` — nothing to call yet)
 - Real ComfyUI graphs in `ai/workflows/` and at least one working model
   end to end (needs downloaded checkpoints + a ComfyUI image on a Modal volume)
-- Storyboard Studio, Scenes/Shots UI, Render Queue
+- Storyboard Studio, Render Queue
 
 ## Sprint 4 — One-Click Movie Generation
+
+Shipped:
+
+- Scenes/Shots CRUD: create/edit/delete scenes (heading, INT/EXT, time of
+  day, linked location, mood, description, estimated duration) with an
+  inline shot list per scene (camera angle/movement, prompt, duration)
+- Timeline data model (`timelines` table, one JSONB `tracks` blob per
+  project) + a read/append/reorder/remove UI across the 8 spec track types
+  (video/audio/voice/music/sfx/subtitles/transitions/overlays). "Add to
+  Timeline" on a shot pushes it onto the video track. Drag-to-reposition,
+  trim, and split are not built yet — reordering is arrow-button based for
+  now; the data model doesn't need to change when that lands.
+
+Still open:
 
 - AI Script Analyzer → Story Bible
 - AI Director + AI Cinematographer recommendations
 - Prompt Engine (model-specific prompt/negative-prompt/parameter generation)
-- Timeline Editor + Movie Composer + final render pipeline
+- Movie Composer + final render pipeline (reads `timelines.tracks` into
+  `render_jobs.timeline_snapshot` — same shape, so no translation needed)
 - Voice Studio, Music Studio, Lip Sync, Subtitle Studio
 - Shot-level resilience: retry a single failed shot, never the whole movie
+- Real drag/trim/split interactions on the Timeline (current version is
+  click-to-reorder only)
 
 ## Sprint 5 — Commercial SaaS
 

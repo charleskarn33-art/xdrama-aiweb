@@ -11,6 +11,7 @@ const TABS = [
   { label: "Characters", segment: "characters" },
   { label: "Environments", segment: "environments" },
   { label: "Assets", segment: "assets" },
+  { label: "Timeline", segment: "timeline" },
   { label: "Generate", segment: "generate" },
 ];
 
