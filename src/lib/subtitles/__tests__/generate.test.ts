@@ -65,3 +65,22 @@ describe("formatVTT", () => {
     expect(vtt).toMatch(/\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}/);
   });
 });
+
+describe("timestamp formatting edge cases", () => {
+  it("never emits a 4-digit millisecond field when rounding lands on a whole second", () => {
+    // 675.9999999999999s is exactly the kind of float-drift value cursor
+    // accumulation can produce; rounding its fractional part alone (the
+    // old implementation) carries to 1000ms without bumping the seconds
+    // field, producing an invalid "...,1000" timestamp.
+    const cues = [
+      { index: 1, startSeconds: 0, endSeconds: 675.9999999999999, character: "A", text: "x" },
+    ];
+    const srt = formatSRT(cues);
+    const timestamps = srt.match(/\d{2}:\d{2}:\d{2},\d{3}/g)!;
+    for (const ts of timestamps) {
+      expect(ts).toMatch(/,\d{3}$/);
+      expect(ts.endsWith(",1000")).toBe(false);
+    }
+    expect(srt).toContain("00:11:16,000");
+  });
+});

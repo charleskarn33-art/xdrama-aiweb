@@ -6,6 +6,15 @@ import { addClipToTrack, createEmptyTracks, moveClip, removeClip } from "@/lib/t
 import type { TimelineClip, TimelineTrack, TrackType } from "@/types/timeline";
 import type { Json } from "@/types/database";
 
+// Known limitation: add/remove/move all do a read-entire-blob → mutate →
+// write-entire-blob round trip on the single `timelines` row, with no
+// optimistic-concurrency check. Two near-simultaneous edits to the same
+// project's timeline (a double-click, two open tabs) can silently drop
+// one edit — whichever save lands second wins outright. Low blast radius
+// today (single-user editing, no collaboration feature yet), but if
+// multi-editor or rapid-fire actions become common, replace this with a
+// Postgres function that mutates the JSONB atomically in one UPDATE
+// instead of round-tripping the whole array through the app.
 async function loadTracks(
   supabase: Awaited<ReturnType<typeof createClient>>,
   projectId: string,

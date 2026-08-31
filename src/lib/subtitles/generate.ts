@@ -72,10 +72,16 @@ export function estimateSubtitleTiming(lines: DialogueLine[]): SubtitleCue[] {
 }
 
 function formatTimestamp(totalSeconds: number, separator: "," | "."): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  const millis = Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000);
+  // Round to whole milliseconds once, up front, then derive h/m/s/ms by
+  // integer division — rounding totalSeconds' fractional part separately
+  // could carry it to 1000ms without incrementing the seconds field,
+  // producing an invalid "00:11:15,1000" timestamp.
+  const totalMillis = Math.round(totalSeconds * 1000);
+  const millis = totalMillis % 1000;
+  const totalWholeSeconds = Math.floor(totalMillis / 1000);
+  const seconds = totalWholeSeconds % 60;
+  const minutes = Math.floor(totalWholeSeconds / 60) % 60;
+  const hours = Math.floor(totalWholeSeconds / 3600);
 
   const pad = (n: number, width = 2) => String(n).padStart(width, "0");
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}${separator}${pad(millis, 3)}`;
