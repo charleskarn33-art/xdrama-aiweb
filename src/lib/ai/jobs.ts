@@ -176,3 +176,55 @@ async function logEvent(
 ) {
   await supabase.from("ai_job_events").insert({ job_id: jobId, status, message });
 }
+
+interface StoredJobInput {
+  prompt?: string;
+  negativePrompt?: string;
+  resolution?: string;
+  fps?: number;
+  durationSeconds?: number;
+}
+
+/**
+ * Resubmits a failed (or cancelled) job's exact parameters as a brand new
+ * job — the original row is never touched. This is the "retry a single
+ * failed shot, never the whole movie" behavior from spec sections 37/73:
+ * every job is independently recoverable.
+ */
+export async function retryJob(
+  supabase: SupabaseClient<Database>,
+  jobId: string,
+  registry: ModelDefinition[] = DEFAULT_MODEL_REGISTRY,
+): Promise<CreateJobResult> {
+  const { data: original, error } = await supabase
+    .from("ai_jobs")
+    .select("*")
+    .eq("id", jobId)
+    .single();
+  if (error || !original) {
+    throw new Error(error?.message ?? `Job ${jobId} not found.`);
+  }
+  if (!original.project_id) {
+    throw new Error("Cannot retry a job with no associated project.");
+  }
+
+  const input = (original.input_metadata as unknown as StoredJobInput) ?? {};
+
+  return createAndSubmitJob(
+    supabase,
+    {
+      userId: original.user_id,
+      projectId: original.project_id,
+      jobType: original.job_type,
+      workflowId: original.workflow_id ?? "",
+      capability: original.job_type as RouteRequest["capability"],
+      requestedModelId: original.model_id ?? undefined,
+      prompt: input.prompt ?? "",
+      negativePrompt: input.negativePrompt,
+      resolution: input.resolution,
+      fps: input.fps,
+      durationSeconds: input.durationSeconds,
+    },
+    registry,
+  );
+}

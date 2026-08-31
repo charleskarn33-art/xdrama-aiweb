@@ -86,6 +86,15 @@ Shipped:
   labeled as an estimate, not measured timing), and formats SRT/VTT.
   Exposed as Export .srt/.vtt buttons in Script Studio.
 
+- Shot-level resilience (`retryJob` in `src/lib/ai/jobs.ts`): resubmits a
+  failed job's exact parameters (model, workflow, prompt, resolution,
+  duration) as a brand-new job — the failed row is never mutated or
+  reused. "Retry this shot" appears on the Generate panel's job status
+  once a job fails. This is genuinely testable without live AI infra: the
+  retry creates a real new job row and goes through the real credit
+  reserve/refund cycle, it just fails the same honest way until a model
+  is actually deployed.
+
 Still open:
 
 - AI Director + AI Cinematographer recommendations (needs a live LLM —
@@ -93,7 +102,6 @@ Still open:
 - Movie Composer + final render pipeline (reads `timelines.tracks` into
   `render_jobs.timeline_snapshot` — same shape, so no translation needed)
 - Voice Studio, Music Studio, Lip Sync
-- Shot-level resilience: retry a single failed shot, never the whole movie
 - Real drag/trim/split interactions on the Timeline (current version is
   click-to-reorder only)
 

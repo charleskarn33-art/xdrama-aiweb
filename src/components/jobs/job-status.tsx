@@ -13,7 +13,15 @@ interface JobEvent {
 
 const TERMINAL_STATUSES: AiJobStatus[] = ["COMPLETED", "FAILED", "CANCELLED"];
 
-export function JobStatus({ jobId }: { jobId: string }) {
+export function JobStatus({
+  jobId,
+  onRetry,
+  retrying,
+}: {
+  jobId: string;
+  onRetry?: () => void;
+  retrying?: boolean;
+}) {
   const [status, setStatus] = useState<AiJobStatus>("QUEUED");
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -105,6 +113,16 @@ export function JobStatus({ jobId }: { jobId: string }) {
       )}
 
       {errorMessage && <p className="text-xs text-destructive">{errorMessage}</p>}
+
+      {isFailed && onRetry && (
+        <button
+          onClick={onRetry}
+          disabled={retrying}
+          className="self-start rounded-md border border-accent/40 px-3 py-1.5 text-xs text-accent transition-colors hover:bg-accent/10 disabled:opacity-50"
+        >
+          {retrying ? "Retrying…" : "Retry this shot"}
+        </button>
+      )}
 
       {events.length > 0 && (
         <ul className="scrollbar-thin flex max-h-40 flex-col gap-1 overflow-y-auto text-xs text-muted-foreground">

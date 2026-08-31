@@ -6,6 +6,7 @@ import {
   createAndSubmitJob,
   IncompatibleModelError,
   InsufficientCreditsError,
+  retryJob,
 } from "@/lib/ai/jobs";
 import type { ModelCapability } from "@/types/model-registry";
 
@@ -56,6 +57,24 @@ export async function submitGenerationJob(
       durationSeconds,
     });
 
+    return { jobId: result.jobId, error: result.errorMessage };
+  } catch (err) {
+    if (err instanceof IncompatibleModelError || err instanceof InsufficientCreditsError) {
+      return { jobId: null, error: err.message };
+    }
+    throw err;
+  }
+}
+
+export async function retryGenerationJob(jobId: string): Promise<SubmitGenerationResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
+
+  try {
+    const result = await retryJob(supabase, jobId);
     return { jobId: result.jobId, error: result.errorMessage };
   } catch (err) {
     if (err instanceof IncompatibleModelError || err instanceof InsufficientCreditsError) {

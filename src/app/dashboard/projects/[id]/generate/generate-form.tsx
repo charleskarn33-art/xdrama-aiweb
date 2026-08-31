@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { JobStatus } from "@/components/jobs/job-status";
-import { submitGenerationJob } from "./actions";
+import { retryGenerationJob, submitGenerationJob } from "./actions";
 
 const CAPABILITIES = [
   { value: "text_to_video", label: "Text to Video" },
@@ -13,6 +13,7 @@ export function GenerateForm({ projectId }: { projectId: string }) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isRetrying, startRetrying] = useTransition();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +22,17 @@ export function GenerateForm({ projectId }: { projectId: string }) {
 
     startTransition(async () => {
       const result = await submitGenerationJob(projectId, formData);
+      if (result.error) setError(result.error);
+      if (result.jobId) setJobId(result.jobId);
+    });
+  }
+
+  function handleRetry() {
+    if (!jobId) return;
+    setError(null);
+
+    startRetrying(async () => {
+      const result = await retryGenerationJob(jobId);
       if (result.error) setError(result.error);
       if (result.jobId) setJobId(result.jobId);
     });
@@ -111,7 +123,9 @@ export function GenerateForm({ projectId }: { projectId: string }) {
         </p>
       )}
 
-      {jobId && <JobStatus key={jobId} jobId={jobId} />}
+      {jobId && (
+        <JobStatus key={jobId} jobId={jobId} onRetry={handleRetry} retrying={isRetrying} />
+      )}
     </div>
   );
 }

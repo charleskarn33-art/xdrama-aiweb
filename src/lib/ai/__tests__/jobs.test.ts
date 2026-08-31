@@ -8,9 +8,8 @@ vi.mock("@/lib/ai/compute", () => ({
 }));
 
 const { getComputeProvider } = await import("@/lib/ai/compute");
-const { createAndSubmitJob, IncompatibleModelError, InsufficientCreditsError } = await import(
-  "@/lib/ai/jobs"
-);
+const { createAndSubmitJob, retryJob, IncompatibleModelError, InsufficientCreditsError } =
+  await import("@/lib/ai/jobs");
 
 interface MockSupabaseHandle {
   client: SupabaseClient<Database>;
@@ -19,8 +18,19 @@ interface MockSupabaseHandle {
   jobUpdates: Array<Record<string, unknown>>;
 }
 
-function createMockSupabase(options: { reserveError?: { message: string } } = {}): MockSupabaseHandle {
-  const jobRow = { id: "job-1", user_id: "user-1", project_id: "proj-1", estimated_cost: 50 };
+function createMockSupabase(
+  options: {
+    reserveError?: { message: string };
+    insertedJobId?: string;
+    existingJob?: Record<string, unknown>;
+  } = {},
+): MockSupabaseHandle {
+  const jobRow = {
+    id: options.insertedJobId ?? "job-1",
+    user_id: "user-1",
+    project_id: "proj-1",
+    estimated_cost: 50,
+  };
   const rpcCalls: Array<{ name: string; args: unknown }> = [];
   const eventInserts: Array<Record<string, unknown>> = [];
   const jobUpdates: Array<Record<string, unknown>> = [];
@@ -38,6 +48,11 @@ function createMockSupabase(options: { reserveError?: { message: string } } = {}
             jobUpdates.push(payload);
             return { eq: async () => ({ error: null }) };
           },
+          select: () => ({
+            eq: () => ({
+              single: async () => ({ data: options.existingJob, error: null }),
+            }),
+          }),
         };
       }
       if (table === "ai_job_events") {
@@ -137,5 +152,56 @@ describe("createAndSubmitJob", () => {
         durationSeconds: 60,
       }),
     ).rejects.toThrow(IncompatibleModelError);
+  });
+});
+
+describe("retryJob", () => {
+  beforeEach(() => {
+    vi.mocked(getComputeProvider).mockReset();
+  });
+
+  const failedOriginal = {
+    id: "job-1",
+    user_id: "user-1",
+    project_id: "proj-1",
+    job_type: "text_to_video",
+    workflow_id: "text-to-video.cinematic-v1",
+    model_id: "wan-2.2",
+    input_metadata: { prompt: "a quiet village at dawn", durationSeconds: 5 },
+  };
+
+  it("resubmits the original job's exact parameters as a brand new job", async () => {
+    const submitJob = vi.fn().mockResolvedValue({ providerJobId: "prov-456" });
+    vi.mocked(getComputeProvider).mockReturnValue({
+      name: "modal",
+      submitJob,
+      getJobStatus: vi.fn(),
+      cancelJob: vi.fn(),
+    });
+
+    const { client } = createMockSupabase({
+      existingJob: failedOriginal,
+      insertedJobId: "job-2",
+    });
+
+    const result = await retryJob(client, "job-1");
+
+    expect(result.jobId).toBe("job-2");
+    expect(result.jobId).not.toBe(failedOriginal.id);
+    expect(submitJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobId: "job-2",
+        modelId: "wan-2.2",
+        input: expect.objectContaining({ prompt: "a quiet village at dawn" }),
+      }),
+    );
+  });
+
+  it("throws when the job has no associated project", async () => {
+    const { client } = createMockSupabase({
+      existingJob: { ...failedOriginal, project_id: null },
+    });
+
+    await expect(retryJob(client, "job-1")).rejects.toThrow(/no associated project/);
   });
 });
