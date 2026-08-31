@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateProject } from "./actions";
+import { updateCulturalContext, updateProject } from "./actions";
 
 const PROJECT_STATUSES = ["draft", "in_progress", "completed", "archived"] as const;
 
@@ -13,17 +13,23 @@ export default async function ProjectOverviewPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: project }, { data: settings }] = await Promise.all([
+    supabase.from("projects").select("*").eq("id", id).maybeSingle(),
+    supabase.from("project_settings").select("cultural_context").eq("project_id", id).maybeSingle(),
+  ]);
 
   if (!project) {
     notFound();
   }
 
   const updateProjectWithId = updateProject.bind(null, id);
+  const updateCulturalContextWithId = updateCulturalContext.bind(null, id);
+  const culturalContext =
+    (settings?.cultural_context as {
+      languages?: string[];
+      setting?: string | null;
+      notes?: string | null;
+    } | null) ?? {};
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,6 +89,63 @@ export default async function ProjectOverviewPage({
               </option>
             ))}
           </select>
+        </div>
+        <button
+          type="submit"
+          className="self-start rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          Save
+        </button>
+      </form>
+
+      <form
+        action={updateCulturalContextWithId}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5"
+      >
+        <div>
+          <h2 className="text-sm font-medium text-muted-foreground">Cultural context</h2>
+          <p className="text-xs text-muted-foreground">
+            Entirely up to you — nothing here is a fixed list. Set the languages,
+            setting, and any cultural notes the AI generation pipeline should
+            respect for this project.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="languages" className="text-xs text-muted-foreground">
+            Languages (comma separated)
+          </label>
+          <input
+            id="languages"
+            name="languages"
+            defaultValue={culturalContext.languages?.join(", ") ?? ""}
+            placeholder="Liberian English, Kpelle"
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="setting" className="text-xs text-muted-foreground">
+            Setting
+          </label>
+          <input
+            id="setting"
+            name="setting"
+            defaultValue={culturalContext.setting ?? ""}
+            placeholder="Rural Liberia, present day"
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="notes" className="text-xs text-muted-foreground">
+            Notes
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={3}
+            defaultValue={culturalContext.notes ?? ""}
+            placeholder="Clothing, customs, or storytelling conventions to keep consistent."
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
         <button
           type="submit"

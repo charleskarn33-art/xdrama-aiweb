@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { updateProfile } from "./actions";
 
@@ -61,6 +62,18 @@ export default async function SettingsPage() {
           Save
         </button>
       </form>
+
+      {profile?.role === "admin" && (
+        <Link
+          href="/dashboard/admin"
+          className="max-w-md rounded-xl border border-accent/40 bg-card p-5 transition-colors hover:bg-accent/10"
+        >
+          <p className="font-medium text-accent">Admin Dashboard</p>
+          <p className="text-sm text-muted-foreground">
+            Users, projects, job status, credit issuance, system health.
+          </p>
+        </Link>
+      )}
 
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-medium text-muted-foreground">Billing — XCredits</h2>

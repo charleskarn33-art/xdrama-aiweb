@@ -92,18 +92,28 @@ Still open:
   same "no fake AI results" constraint as Sprint 3's Generate panel)
 - Movie Composer + final render pipeline (reads `timelines.tracks` into
   `render_jobs.timeline_snapshot` — same shape, so no translation needed)
-- Voice Studio, Music Studio, Lip Sync, Subtitle Studio
+- Voice Studio, Music Studio, Lip Sync
 - Shot-level resilience: retry a single failed shot, never the whole movie
 - Real drag/trim/split interactions on the Timeline (current version is
   click-to-reorder only)
 
 ## Sprint 5 — Commercial SaaS
 
+Shipped:
+
+- Cultural context (`project_settings.cultural_context`): free-form
+  languages/setting/notes per project, entirely user-defined — no
+  hard-coded list of "supported" cultures or languages (spec section 75)
+- Admin Dashboard (`/dashboard/admin`, linked from Settings for
+  `profiles.role = 'admin'` only): user/project counts, job counts by
+  status, XCredits issued/reserved across all wallets, recent jobs table,
+  and AI orchestrator reachability — all through normal RLS-protected
+  queries plus an `is_admin()` policy (0007_admin_access.sql), no
+  service-role bypass
+
+Still open:
+
 - Billing architecture (packages, subscriptions, usage limits; pluggable provider)
-- Admin dashboard (users, jobs, GPU usage, model usage, revenue, system health)
 - Full observability (structured logs, cost tracking dashboards)
 - Export Studio platform presets (YouTube/TikTok/Instagram/Facebook)
-- Expanded language/cultural support (Liberian English, Kpelle, Bassa, Kru,
-  Vai, Gio, Mano, Sierra Leonean and Guinean languages) as user-defined
-  cultural context, not hard-coded assumptions
 - Full test coverage across frontend/backend/DB/AI/infrastructure
