@@ -1,0 +1,22 @@
+{
+  "id": "text-to-video.cinematic-v1",
+  "name": "Cinematic Text-to-Video",
+  "category": "text-to-video",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["text_to_video", "cinematic_video"]
+  },
+  "inputs": {
+    "prompt": { "type": "string", "required": true },
+    "negativePrompt": { "type": "string", "required": false },
+    "resolution": { "type": "string", "enum": ["720p", "1080p"], "default": "1080p" },
+    "fps": { "type": "number", "enum": [24, 30], "default": 24 },
+    "durationSeconds": { "type": "number", "minimum": 1, "maximum": 10, "default": 5 },
+    "seed": { "type": "number", "required": false }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}

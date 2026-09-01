@@ -1,0 +1,23 @@
+{
+  "id": "cinematic.cinematic-shot-v1",
+  "name": "Cinematic Shot",
+  "category": "cinematic",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["cinematic_video"]
+  },
+  "inputs": {
+    "prompt": { "type": "string", "required": true },
+    "cameraAngle": { "type": "string", "required": false },
+    "cameraMovement": { "type": "string", "required": false },
+    "lens": { "type": "string", "required": false },
+    "lighting": { "type": "string", "required": false },
+    "durationSeconds": { "type": "number", "minimum": 1, "maximum": 10, "default": 5 },
+    "seed": { "type": "number", "required": false }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}

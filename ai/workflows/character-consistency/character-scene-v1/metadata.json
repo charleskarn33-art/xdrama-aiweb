@@ -1,0 +1,22 @@
+{
+  "id": "character-consistency.character-scene-v1",
+  "name": "Character-Consistent Scene",
+  "category": "character-consistency",
+  "version": "1",
+  "status": "active",
+  "modelRequirements": {
+    "type": "video",
+    "capabilities": ["character_consistency"]
+  },
+  "inputs": {
+    "characterId": { "type": "string", "required": true },
+    "characterReferenceImages": { "type": "image[]", "required": true },
+    "prompt": { "type": "string", "required": true },
+    "locationId": { "type": "string", "required": false },
+    "durationSeconds": { "type": "number", "minimum": 1, "maximum": 10, "default": 5 },
+    "seed": { "type": "number", "required": false }
+  },
+  "outputs": {
+    "video": { "type": "video", "format": "mp4" }
+  }
+}

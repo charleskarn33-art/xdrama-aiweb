@@ -1,0 +1,152 @@
+# XDrama AI Studio — Roadmap
+
+## Security review (0009_security_fixes.sql)
+
+A security review pass found and fixed two real, exploitable vulnerabilities
+before this ever reached a live user base:
+
+1. `profiles_update_own` had no column restriction, so any authenticated
+   user could set their own `role` to `'admin'` directly via
+   `supabase.rpc`/PostgREST, bypassing the app entirely, and immediately
+   gain the admin-read policies from 0007 (every user's projects, jobs,
+   and credit wallets). Fixed with a trigger that makes `role` immutable
+   via the RLS-scoped client until an actual admin-granting feature exists.
+2. The credit RPCs (`reserve_credits`/`settle_job_credits`/
+   `refund_reserved_credits`) are `SECURITY DEFINER` and callable directly
+   by any `authenticated` user, with no check that the caller owned
+   `p_user_id`/the job, and `settle_job_credits`/`refund_reserved_credits`
+   weren't idempotent — calling either twice on the same job re-applied
+   the refund. Combined, a user could mint unlimited XCredits from their
+   own job, or drain another user's wallet. Fixed with ownership checks
+   and an atomic single-settlement claim (`ai_jobs.credits_settled`).
+
+Both were reachable by anyone with a valid session calling the RPC/table
+directly — not through any UI the app exposes — which is exactly the kind
+of gap a code-level review of the app's own screens won't catch; only
+reading the actual RLS policies and SECURITY DEFINER functions surfaced it.
+
+## Sprint 1 — Infrastructure Foundation (this PR)
+
+- Next.js 16 + TypeScript + Tailwind v4 scaffold, dark cinematic theme
+- Supabase browser/server clients + session-refresh middleware
+- Email/password auth (sign up, sign in, sign out, protected dashboard)
+- Core DB schema + RLS migration (profiles, projects, scripts, scenes,
+  shots, characters, locations, props, storyboards, assets, ai_models,
+  ai_workflows, ai_jobs, ai_job_events, render_jobs, exports, credit
+  wallets/transactions/packages, notifications, user_settings, audit_logs)
+- `AIComputeProvider` abstraction + `ModalComputeProvider`
+- Model Registry (20 seeded models across video/image/audio/tts/lip_sync/llm)
+- AI Router with capability-based selection, AUTO default, and fallback
+- `ai/workflows/` template structure (7 categories, versioned metadata)
+- `ai-server/` FastAPI orchestrator skeleton (honest 501s, no fake success)
+- Navigation shell with all Section 53 nav items wired (stubs labeled by sprint)
+- Vitest + pytest test setup
+
+## Sprint 2 — MVP
+
+- Script Studio: rich text editor, autosave, scene numbering, versioning, import/export
+- Asset Library: upload, tag, search, signed URLs, thumbnails
+- Project workspace layout (left nav / center workspace / right inspector / bottom timeline)
+- Credit system UI: packages, purchase flow (billing provider TBD), balance display
+
+## Sprint 3 — AI Filmmaking Engine
+
+Shipped:
+
+- AI Job pipeline (`src/lib/ai/jobs.ts`): routes a model, checks
+  compatibility (`src/lib/ai/compatibility.ts`), reserves XCredits via
+  atomic Postgres RPCs (`reserve_credits`/`settle_job_credits`/
+  `refund_reserved_credits`), creates the `ai_jobs` row, and submits to the
+  `AIComputeProvider` — failing honestly (and refunding the reservation) if
+  the provider is unreachable, never a fake success
+- Supabase Realtime wired for `ai_jobs`/`ai_job_events`; `JobStatus` shows
+  live stage/progress/error without a page refresh
+- A project-scoped **Generate** panel exercises the full pipeline end to
+  end — it fails with "AI provider unavailable" today because nothing
+  downstream is deployed yet, which is the correct, honest behavior
+- Character Studio and Environment Studio: full CRUD + reference image
+  galleries (direct-to-storage upload, same pattern as the Asset Library)
+- `ai-server/modal_app/`: a real, deployable Modal app with one function
+  per generation type (video/image/audio/voice/lip_sync/movie render), GPU
+  class pulled from the model registry — each currently raises
+  `NotImplementedError` rather than fabricating a result
+
+Deferred (needs real GPU infra, not just more app code):
+
+- Wiring the orchestrator's `/jobs/submit` to actually call the Modal
+  functions above (currently still `501` — nothing to call yet)
+- Real ComfyUI graphs in `ai/workflows/` and at least one working model
+  end to end (needs downloaded checkpoints + a ComfyUI image on a Modal volume)
+- Storyboard Studio, Render Queue
+
+## Sprint 4 — One-Click Movie Generation
+
+Shipped:
+
+- Scenes/Shots CRUD: create/edit/delete scenes (heading, INT/EXT, time of
+  day, linked location, mood, description, estimated duration) with an
+  inline shot list per scene (camera angle/movement, prompt, duration)
+- Timeline data model (`timelines` table, one JSONB `tracks` blob per
+  project) + a read/append/reorder/remove UI across the 8 spec track types
+  (video/audio/voice/music/sfx/subtitles/transitions/overlays). "Add to
+  Timeline" on a shot pushes it onto the video track. Drag-to-reposition,
+  trim, and split are not built yet — reordering is arrow-button based for
+  now; the data model doesn't need to change when that lands.
+- Script Analyzer (`src/lib/script/analyze.ts`): deterministic screenplay
+  parsing — no LLM call — that reads scene headings into Scenes+Locations
+  and ALL-CAPS dialogue cues into Characters. "Analyze Script" in Script
+  Studio seeds the Story Bible from a script and is safe to re-run (skips
+  anything already imported by heading/name). The Story Bible itself is
+  just the Characters/Locations/Scenes tables already built — no separate
+  aggregation view yet. Mood, camera, and lighting suggestions need a real
+  LLM call and are deferred with the rest of the AI Director work below.
+- Prompt Engine (`src/lib/ai/prompt-engine.ts`): composes scene/location/
+  mood/camera/character context into a model-ready prompt + a sensible
+  default negative prompt, model-type aware (camera movement only applies
+  to video). Deterministic string composition, no model call. Wired into
+  the shot creation form's "Suggest" button.
+- Subtitle Studio (`src/lib/subtitles/generate.ts`): extracts dialogue
+  from character cue lines in the script, estimates timing from a
+  words-per-second reading pace (there's no audio yet to time against —
+  labeled as an estimate, not measured timing), and formats SRT/VTT.
+  Exposed as Export .srt/.vtt buttons in Script Studio.
+
+- Shot-level resilience (`retryJob` in `src/lib/ai/jobs.ts`): resubmits a
+  failed job's exact parameters (model, workflow, prompt, resolution,
+  duration) as a brand-new job — the failed row is never mutated or
+  reused. "Retry this shot" appears on the Generate panel's job status
+  once a job fails. This is genuinely testable without live AI infra: the
+  retry creates a real new job row and goes through the real credit
+  reserve/refund cycle, it just fails the same honest way until a model
+  is actually deployed.
+
+Still open:
+
+- AI Director + AI Cinematographer recommendations (needs a live LLM —
+  same "no fake AI results" constraint as Sprint 3's Generate panel)
+- Movie Composer + final render pipeline (reads `timelines.tracks` into
+  `render_jobs.timeline_snapshot` — same shape, so no translation needed)
+- Voice Studio, Music Studio, Lip Sync
+- Real drag/trim/split interactions on the Timeline (current version is
+  click-to-reorder only)
+
+## Sprint 5 — Commercial SaaS
+
+Shipped:
+
+- Cultural context (`project_settings.cultural_context`): free-form
+  languages/setting/notes per project, entirely user-defined — no
+  hard-coded list of "supported" cultures or languages (spec section 75)
+- Admin Dashboard (`/dashboard/admin`, linked from Settings for
+  `profiles.role = 'admin'` only): user/project counts, job counts by
+  status, XCredits issued/reserved across all wallets, recent jobs table,
+  and AI orchestrator reachability — all through normal RLS-protected
+  queries plus an `is_admin()` policy (0007_admin_access.sql), no
+  service-role bypass
+
+Still open:
+
+- Billing architecture (packages, subscriptions, usage limits; pluggable provider)
+- Full observability (structured logs, cost tracking dashboards)
+- Export Studio platform presets (YouTube/TikTok/Instagram/Facebook)
+- Full test coverage across frontend/backend/DB/AI/infrastructure
