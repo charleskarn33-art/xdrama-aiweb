@@ -395,6 +395,7 @@ interface TableDefs {
           gpu_seconds: number | null;
           estimated_cost: number | null;
           actual_cost: number | null;
+          credits_settled: boolean;
           created_at: string;
           updated_at: string;
         };

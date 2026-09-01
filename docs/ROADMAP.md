@@ -1,5 +1,30 @@
 # XDrama AI Studio — Roadmap
 
+## Security review (0009_security_fixes.sql)
+
+A security review pass found and fixed two real, exploitable vulnerabilities
+before this ever reached a live user base:
+
+1. `profiles_update_own` had no column restriction, so any authenticated
+   user could set their own `role` to `'admin'` directly via
+   `supabase.rpc`/PostgREST, bypassing the app entirely, and immediately
+   gain the admin-read policies from 0007 (every user's projects, jobs,
+   and credit wallets). Fixed with a trigger that makes `role` immutable
+   via the RLS-scoped client until an actual admin-granting feature exists.
+2. The credit RPCs (`reserve_credits`/`settle_job_credits`/
+   `refund_reserved_credits`) are `SECURITY DEFINER` and callable directly
+   by any `authenticated` user, with no check that the caller owned
+   `p_user_id`/the job, and `settle_job_credits`/`refund_reserved_credits`
+   weren't idempotent — calling either twice on the same job re-applied
+   the refund. Combined, a user could mint unlimited XCredits from their
+   own job, or drain another user's wallet. Fixed with ownership checks
+   and an atomic single-settlement claim (`ai_jobs.credits_settled`).
+
+Both were reachable by anyone with a valid session calling the RPC/table
+directly — not through any UI the app exposes — which is exactly the kind
+of gap a code-level review of the app's own screens won't catch; only
+reading the actual RLS policies and SECURITY DEFINER functions surfaced it.
+
 ## Sprint 1 — Infrastructure Foundation (this PR)
 
 - Next.js 16 + TypeScript + Tailwind v4 scaffold, dark cinematic theme
